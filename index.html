@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neutral Baymax Assistant</title>
+    <style>
+        :root {
+            --eye-size: 80px;
+            --bridge-width: 200px;
+            --color-black: #1a1a1a;
+            --bg-color: #fcfcfc;
+            --glow-strength: 1.2px;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Container handles the organic "Breathing" movement */
+        .baymax-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: breathe 5s ease-in-out infinite;
+        }
+
+        .eye-system {
+            display: flex;
+            align-items: center;
+        }
+
+        .eye {
+            width: var(--eye-size);
+            height: var(--eye-size);
+            background-color: var(--color-black);
+            border-radius: 50%;
+            filter: blur(var(--glow-strength));
+            transform-origin: center;
+            transition: transform 0.1s ease-out;
+        }
+
+        .bridge {
+            width: var(--bridge-width);
+            height: 10px;
+            background-color: var(--color-black);
+            filter: blur(var(--glow-strength));
+            margin: 0 -10px; /* Slight overlap for a seamless look */
+        }
+
+        /* --- ANIMATIONS --- */
+
+        /* Subtle vertical drift and scale to mimic inflation/breathing */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.02) translateY(-8px); }
+        }
+
+        /* The Blink: quick shut, slightly slower open */
+        .blink-animation {
+            animation: blink-frames 0.18s ease-in-out forwards;
+        }
+
+        @keyframes blink-frames {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.02); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="baymax-container">
+        <div class="eye-system">
+            <div class="eye left"></div>
+            <div class="bridge"></div>
+            <div class="eye right"></div>
+        </div>
+    </div>
+
+    <script>
+        const eyes = document.querySelectorAll('.eye');
+
+        /**
+         * Natural Randomized Blinking
+         * He will blink at irregular intervals to feel more lifelike.
+         */
+        function scheduleNextBlink() {
+            // Random delay between 2.5 and 8 seconds
+            const delay = Math.random() * 5500 + 2500; 
+            
+            setTimeout(() => {
+                triggerBlink();
+                scheduleNextBlink();
+            }, delay);
+        }
+
+        function triggerBlink() {
+            eyes.forEach(eye => {
+                eye.classList.remove('blink-animation');
+                void eye.offsetWidth; // Trigger reflow to restart animation
+                eye.classList.add('blink-animation');
+            });
+
+            // Occasional "double-blink" (15% chance)
+            if (Math.random() > 0.85) {
+                setTimeout(triggerBlink, 250);
+            }
+        }
+
+        // Start the idle cycle
+        scheduleNextBlink();
+    </script>
+</body>
+</html>

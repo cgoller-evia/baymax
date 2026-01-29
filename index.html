@@ -35,9 +35,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            /* Default: Idle Breathing */
             animation: breathe 6s ease-in-out infinite;
             transform-origin: center bottom;
             transition: transform var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: transform;
         }
 
         .eye-system {
@@ -68,15 +70,19 @@
         }
 
         /* --- STATES --- */
+        
+        /* 1. LISTENING: The "Focus Hover" */
+        /* Maintains the tilt but adds a slow, attentive drift */
         .baymax-head[data-state="listening"] {
-            transform: scale(1.05) rotate(-12deg);
-            animation: none;
+            animation: listen-hover 3s ease-in-out infinite;
         }
 
+        /* 2. THINKING: The "Metronome Sway" */
         .baymax-head[data-state="thinking"] {
             animation: think-sway 2s ease-in-out infinite;
         }
 
+        /* 3. SPEAKING: The "Vocal Bounce" */
         .baymax-head[data-state="speaking"] {
             animation: speak-bounce 0.4s ease-in-out infinite alternate;
         }
@@ -85,10 +91,23 @@
             transform: scaleY(1.5); 
         }
 
-        /* --- ANIMATIONS --- */
+        /* --- ANIMATION KEYFRAMES --- */
+
         @keyframes breathe {
             0%, 100% { transform: translateY(0) scale(1); }
             50% { transform: translateY(-10px) scale(1.03); }
+        }
+
+        /* Updated Listening Animation */
+        @keyframes listen-hover {
+            0%, 100% { 
+                /* Start at the tilted position */
+                transform: scale(1.05) rotate(-12deg) translateY(0); 
+            }
+            50% { 
+                /* Gently lift and expand slightly (tension/attention) */
+                transform: scale(1.07) rotate(-12deg) translateY(-6px); 
+            }
         }
 
         @keyframes think-sway {
@@ -101,6 +120,7 @@
             100% { transform: translateY(-4px) scaleY(1.05); }
         }
 
+        /* Blink Animation */
         .blink-animation {
             animation: blink-frames 0.2s ease-in-out forwards;
         }
@@ -114,7 +134,7 @@
         .controls {
             position: absolute;
             bottom: 50px;
-            display: none; /* Hidden by default, toggled via param */
+            display: none;
             gap: 15px;
             background: rgba(255, 255, 255, 0.8);
             padding: 15px 25px;
@@ -171,13 +191,12 @@
 
         // --- State Management ---
         function setMode(mode) {
-            // Validate mode
             const validModes = ['idle', 'listening', 'thinking', 'speaking'];
             if (!validModes.includes(mode)) return;
 
             baymax.setAttribute('data-state', mode);
             
-            // Update Buttons (only matters if controls are visible)
+            // Update Buttons
             buttons.forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById(`btn-${mode}`);
             if (activeBtn) activeBtn.classList.add('active');
@@ -203,17 +222,15 @@
             }
         }
 
-        // --- URL Parameter Initialization ---
+        // --- URL Param Logic ---
         function initFromParams() {
             const params = new URLSearchParams(window.location.search);
             
-            // 1. Check for 'controls' param (e.g. ?controls=true)
             const showControls = params.get('controls');
             if (showControls === 'true' || showControls === '1') {
                 controlPanel.style.display = 'flex';
             }
 
-            // 2. Check for 'state' param (e.g. ?state=thinking)
             const initialState = params.get('state');
             if (initialState) {
                 setMode(initialState);
@@ -222,7 +239,6 @@
             }
         }
 
-        // Start
         scheduleNextBlink();
         initFromParams();
 

@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neutral Baymax Assistant</title>
+    <title>Baymax Assistant Interface</title>
     <style>
         :root {
-            --eye-size: 80px;
-            --bridge-width: 200px;
-            --color-black: #1a1a1a;
-            --bg-color: #fcfcfc;
-            --glow-strength: 1.2px;
+            --eye-size: 70px;
+            --bridge-width: 160px;
+            --bridge-thickness: 10px;
+            --color-black: #1e1e1e;
+            --bg-color: #fafafa;
+            --soft-blur: 0.8px;
+            --transition-speed: 0.6s;
         }
 
         body, html {
@@ -20,22 +22,28 @@
             height: 100%;
             background-color: var(--bg-color);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
+            font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
         }
 
-        /* Container handles the organic "Breathing" movement */
-        .baymax-container {
+        /* --- THE FACE --- */
+        .baymax-head {
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: breathe 5s ease-in-out infinite;
+            animation: breathe 6s ease-in-out infinite;
+            transform-origin: center bottom;
+            transition: transform var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
         }
 
         .eye-system {
             display: flex;
             align-items: center;
+            position: relative;
         }
 
         .eye {
@@ -43,41 +51,104 @@
             height: var(--eye-size);
             background-color: var(--color-black);
             border-radius: 50%;
-            filter: blur(var(--glow-strength));
-            transform-origin: center;
-            transition: transform 0.1s ease-out;
+            filter: blur(var(--soft-blur));
+            transition: transform 0.15s ease-out;
+            z-index: 2;
         }
 
         .bridge {
             width: var(--bridge-width);
-            height: 10px;
+            height: var(--bridge-thickness);
             background-color: var(--color-black);
-            filter: blur(var(--glow-strength));
-            margin: 0 -10px; /* Slight overlap for a seamless look */
+            filter: blur(var(--soft-blur));
+            margin: 0 -15px;
+            z-index: 1;
+            transform-origin: center;
+            transition: transform 0.3s ease;
+        }
+
+        /* --- STATES --- */
+        .baymax-head[data-state="listening"] {
+            transform: scale(1.05) rotate(-12deg);
+            animation: none;
+        }
+
+        .baymax-head[data-state="thinking"] {
+            animation: think-sway 2s ease-in-out infinite;
+        }
+
+        .baymax-head[data-state="speaking"] {
+            animation: speak-bounce 0.4s ease-in-out infinite alternate;
+        }
+        
+        .baymax-head[data-state="speaking"] .bridge {
+            transform: scaleY(1.5); 
         }
 
         /* --- ANIMATIONS --- */
-
-        /* Subtle vertical drift and scale to mimic inflation/breathing */
         @keyframes breathe {
-            0%, 100% { transform: scale(1) translateY(0); }
-            50% { transform: scale(1.02) translateY(-8px); }
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.03); }
         }
 
-        /* The Blink: quick shut, slightly slower open */
+        @keyframes think-sway {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        @keyframes speak-bounce {
+            0% { transform: translateY(0) scaleY(1); }
+            100% { transform: translateY(-4px) scaleY(1.05); }
+        }
+
         .blink-animation {
-            animation: blink-frames 0.18s ease-in-out forwards;
+            animation: blink-frames 0.2s ease-in-out forwards;
         }
 
         @keyframes blink-frames {
             0%, 100% { transform: scaleY(1); }
-            50% { transform: scaleY(0.02); }
+            40% { transform: scaleY(0.05); }
+        }
+
+        /* --- UI CONTROLS --- */
+        .controls {
+            position: absolute;
+            bottom: 50px;
+            display: none; /* Hidden by default, toggled via param */
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            backdrop-filter: blur(5px);
+        }
+
+        button {
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 600;
+            color: #888;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover { color: #333; background: #eee; }
+        
+        button.active {
+            color: #fff;
+            background-color: #1e1e1e;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body>
 
-    <div class="baymax-container">
+    <div class="baymax-head" id="baymax" data-state="idle">
         <div class="eye-system">
             <div class="eye left"></div>
             <div class="bridge"></div>
@@ -85,17 +156,36 @@
         </div>
     </div>
 
-    <script>
-        const eyes = document.querySelectorAll('.eye');
+    <div class="controls" id="controlPanel">
+        <button onclick="setMode('idle')" id="btn-idle">Idle</button>
+        <button onclick="setMode('listening')" id="btn-listening">Listening</button>
+        <button onclick="setMode('thinking')" id="btn-thinking">Thinking</button>
+        <button onclick="setMode('speaking')" id="btn-speaking">Speaking</button>
+    </div>
 
-        /**
-         * Natural Randomized Blinking
-         * He will blink at irregular intervals to feel more lifelike.
-         */
-        function scheduleNextBlink() {
-            // Random delay between 2.5 and 8 seconds
-            const delay = Math.random() * 5500 + 2500; 
+    <script>
+        const baymax = document.getElementById('baymax');
+        const eyes = document.querySelectorAll('.eye');
+        const buttons = document.querySelectorAll('.controls button');
+        const controlPanel = document.getElementById('controlPanel');
+
+        // --- State Management ---
+        function setMode(mode) {
+            // Validate mode
+            const validModes = ['idle', 'listening', 'thinking', 'speaking'];
+            if (!validModes.includes(mode)) return;
+
+            baymax.setAttribute('data-state', mode);
             
+            // Update Buttons (only matters if controls are visible)
+            buttons.forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`btn-${mode}`);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
+        // --- Blinking Logic ---
+        function scheduleNextBlink() {
+            const delay = Math.random() * 5000 + 3000; 
             setTimeout(() => {
                 triggerBlink();
                 scheduleNextBlink();
@@ -105,18 +195,37 @@
         function triggerBlink() {
             eyes.forEach(eye => {
                 eye.classList.remove('blink-animation');
-                void eye.offsetWidth; // Trigger reflow to restart animation
+                void eye.offsetWidth; 
                 eye.classList.add('blink-animation');
             });
-
-            // Occasional "double-blink" (15% chance)
-            if (Math.random() > 0.85) {
-                setTimeout(triggerBlink, 250);
+            if (Math.random() > 0.90) {
+                setTimeout(triggerBlink, 300);
             }
         }
 
-        // Start the idle cycle
+        // --- URL Parameter Initialization ---
+        function initFromParams() {
+            const params = new URLSearchParams(window.location.search);
+            
+            // 1. Check for 'controls' param (e.g. ?controls=true)
+            const showControls = params.get('controls');
+            if (showControls === 'true' || showControls === '1') {
+                controlPanel.style.display = 'flex';
+            }
+
+            // 2. Check for 'state' param (e.g. ?state=thinking)
+            const initialState = params.get('state');
+            if (initialState) {
+                setMode(initialState);
+            } else {
+                setMode('idle');
+            }
+        }
+
+        // Start
         scheduleNextBlink();
+        initFromParams();
+
     </script>
 </body>
 </html>
